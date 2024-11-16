@@ -38,16 +38,22 @@ export const getContacts = async ({
   };
 };
 
-export const getContactById = (id) => ContactCollection.findById(id);
+export const getContactById = async ({ id, userId }) => {
+  return ContactCollection.findOne({ _id: id, userId });
+};
 
 export const addContact = (payload) => ContactCollection.create(payload);
 
-export const updateContact = async ({ _id, payload, options = {} }) => {
-  const rawResult = await ContactCollection.findOneAndUpdate({ _id }, payload, {
-    ...options,
-    new: true,
-    includeResultMetadata: true,
-  });
+export const updateContact = async ({ _id, userId, payload, options = {} }) => {
+  const rawResult = await ContactCollection.findOneAndUpdate(
+    { _id: id, userId },
+    payload,
+    {
+      ...options,
+      new: true,
+      includeResultMetadata: true,
+    },
+  );
 
   if (!rawResult || !rawResult.value) return null;
 
