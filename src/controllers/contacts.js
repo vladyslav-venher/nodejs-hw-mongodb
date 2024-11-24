@@ -1,10 +1,14 @@
 import createHttpError from 'http-errors';
 import * as contactServices from '../services/contacts.js';
+import * as path from 'node:path';
 
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
 import { parseSortParams } from '../utils/parseSortParams.js';
 import { parseContactFilterParams } from '../utils/parseContactFilterParams.js';
 import { sortByList } from '../db/Models/Contact.js';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
+import { env } from '../utils/env.js';
 
 export const getContactsController = async (req, res) => {
   const { page, perPage } = parsePaginationParams(req.query);
@@ -46,7 +50,17 @@ export const getContactByIdController = async (req, res) => {
 
 export const addContactController = async (req, res) => {
   const { _id: userId } = req.user;
-  const data = await contactServices.addContact({ ...req.body, userId });
+  let photo = null;
+  if (req.file) {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      photo = await saveFileToCloudinary(req.file, 'photos ');
+    } else {
+      await saveFileToUploadDir(req.file);
+      photo = path.join(req.file.filename);
+    }
+  }
+
+  const data = await contactServices.addContact({ ...req.body, photo, userId });
 
   res.status(201).json({
     status: 201,
@@ -55,14 +69,26 @@ export const addContactController = async (req, res) => {
   });
 };
 
-export const patchContactController = async (req, res) => {
+export const patchContactController = async (req, res, next) => {
   const { id: _id } = req.params;
   const { _id: userId } = req.user;
+  const photo = req.file;
+
+  let photoUrl;
+
+  if (photo) {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
 
   const result = await contactServices.updateContact({
     _id,
     userId,
     payload: req.body,
+    photo: photoUrl,
   });
 
   if (!result) {
