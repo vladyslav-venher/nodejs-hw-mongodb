@@ -28,7 +28,7 @@
     }
   ],
   "paths": {
-    "/students": {
+    "/contacts": {
       "get": {
         "tags": [
           "Contacts"
@@ -262,7 +262,7 @@
         }
       }
     },
-    "/students/{id}": {
+    "/contacts/{id}": {
       "get": {
         "tags": [
           "Contacts"
